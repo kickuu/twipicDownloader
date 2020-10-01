@@ -7,6 +7,7 @@ using System.IO;
 using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.SceneManagement;
+using TMPro;
 
 public class MainScript : MonoBehaviour
 {
@@ -47,7 +48,7 @@ public class MainScript : MonoBehaviour
         token = consumerKey.GetTokens(pincode);
         if (token != null)
         {
-            SceneManager.LoadScene("ActionScene");
+            SceneManager.LoadScene("MenuScene");
         }
     }
 
