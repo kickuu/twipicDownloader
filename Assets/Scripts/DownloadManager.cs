@@ -12,50 +12,47 @@ public class DownloadManager : MonoBehaviour
 {
     [SerializeField] public Text status;
     [SerializeField] public GameObject downloadButton;
-    [SerializeField] public Text limitTimer;
+    [SerializeField] public GameObject downloadStopButton;
+    [SerializeField] public Text limitText;
 
     long? maxID = null;
     // long? sinceID = null;
+    bool downloadFlag = false;
+    bool downloadStopFlag = false;
     int downloadCount = 0;
 
     void Start()
     {
         status.GetComponent<Text>();
-        limitTimer.GetComponent<Text>();
-        limitTimer.text = "0";
-        // RateLimitCheck();
+        limitText.GetComponent<Text>();
+        downloadStopButton.SetActive(false);
+        limitText.text = "";
     }
-
-    //APIのレートリミット確認処理
-    // void RateLimitCheck()
-    // {
-    //     if (MainScript.token.Favorites.List().RateLimit.Remaining < 1)
-    //     {
-    //         status.text = "TwitterAPI RateLimit! Wait 15 minute";
-    //         downloadButton.SetActive(false);
-    //     }
-
-    //     if (MainScript.token.Favorites.List().RateLimit.Remaining == 200)
-    //     {
-    //         downloadButton.SetActive(true);
-    //     }
-    // }
 
     //DownloadButtonがクリックされたら発火
     public void DownloadButtonClick()
     {
         StartCoroutine(StartDownload());
     }
+    //DownloadStopButtonが押されたら中止フラグを立ててシーン再読み込み
+    public void downloadStopButtonClick()
+    {
+        downloadStopFlag = true;
+        SceneManager.LoadScene(SceneManager.GetActiveScene().name);
+    }
 
+    //ダウンロード処理
     public IEnumerator StartDownload()
     {
+        downloadFlag = true;
         downloadButton.SetActive(false);
-        status.text = "Downloading picture...";
+        downloadStopButton.SetActive(true);
+        status.text = "ダウンロード中...";
 
         //ネットワーク状態を確認。つながったら次の処理へ
         while (Application.internetReachability == NetworkReachability.NotReachable)
         {
-            Debug.Log("ネットワークエラー");
+            limitText.text = "ネットワークに接続されていません";
             yield return new WaitForSeconds(5f);
         }
 
@@ -75,6 +72,12 @@ public class DownloadManager : MonoBehaviour
 
                         for (int i = 0; i <= mediaLength - 1; i++)
                         {
+                            //downloadStopのフラグが立ったらコルーチン抜ける
+                            if (downloadStopFlag == true)
+                            {
+                                yield break;
+                            }
+
                             StringBuilder fileName = new StringBuilder();
                             string url = myFav.ExtendedEntities.Media[i].MediaUrlHttps + ":orig";
 
@@ -107,7 +110,7 @@ public class DownloadManager : MonoBehaviour
                                     }
                                     catch (Exception ex)
                                     {
-                                        Debug.Log(ex.Message);
+                                        limitText.text = "ダウンロードエラー";
                                     }
                                 }
                             }
@@ -121,32 +124,28 @@ public class DownloadManager : MonoBehaviour
             }
             else
             {
-                Debug.Log("RateLimit !!");
+                downloadFlag = false;
                 StartCoroutine(RateLimitWait());
                 break;
             }
         }
-        // downloadButton.SetActive(true);
-        // status.text = "finish";
+        if (downloadFlag == true)
+        {
+            downloadButton.SetActive(true);
+            status.text = "ダウンロード完了";
+        }
     }
 
+    //API利用上限に到達したら900秒待機してシーン再読み込み
     IEnumerator RateLimitWait()
-    {
-        downloadButton.SetActive(false);
-        status.text = "RateLimit! Wait 15minutes";
-
-        StartCoroutine(RateLimitTimer());
-        yield return new WaitForSeconds(10f);
-
-        SceneManager.LoadScene(SceneManager.GetActiveScene().name);
-    }
-
-    IEnumerator RateLimitTimer()
     {
         for (int i = 10; i >= 0; i--)
         {
-            limitTimer.text = "制限解除まで" + i + "秒";
+            downloadStopButton.SetActive(false);
+            status.text = "ダウンロード停止";
+            limitText.text = "ダウンロード回数が上限に達しました。 " + i + "秒後に制限解除";
             yield return new WaitForSeconds(1f);
         }
+        SceneManager.LoadScene(SceneManager.GetActiveScene().name);
     }
 }
