@@ -43,6 +43,7 @@ public class MainScript : MonoBehaviour
         }
         catch (Exception ex)
         {
+            Debug.Log(ex.Message);
             discliption.text = "認証に失敗しました。コードが間違っているか、期限が切れています。";
             discliption.color = Color.red;
         }

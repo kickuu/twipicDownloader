@@ -169,6 +169,7 @@ public class DownloadManager : MonoBehaviour
                                     }
                                     catch (Exception ex)
                                     {
+                                        Debug.Log(ex.Message);
                                         status.text = "ダウンロードエラー";
                                     }
                                 }
