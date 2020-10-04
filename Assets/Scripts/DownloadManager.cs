@@ -7,58 +7,117 @@ using CoreTweet;
 using UnityEngine.Networking;
 using System.Text;
 using UnityEngine.SceneManagement;
+using TMPro;
+//フォルダ選択のために使用
+using System.Windows.Forms;
 
 public class DownloadManager : MonoBehaviour
 {
-    [SerializeField] public Text status;
-    [SerializeField] public GameObject downloadButton;
-    [SerializeField] public GameObject downloadStopButton;
-    [SerializeField] public Text limitText;
+    [SerializeField] Text status;
+    [SerializeField] GameObject downloadStartButton;
+    [SerializeField] GameObject downloadStopButton;
+    [SerializeField] GameObject folderSelectButton;
+    [SerializeField] Transform canvas;
+    [SerializeField] Text discliptionText;
+    [SerializeField] TextMeshProUGUI saveDirectlyText;
+    [SerializeField] GameObject notDirectlyPopup;
+    //popup prefab 用の変数
+    GameObject popupClone;
 
     long? maxID = null;
     // long? sinceID = null;
     bool downloadFlag = false;
     bool downloadStopFlag = false;
+    //デバッグ用 API 使用回数
     int downloadCount = 0;
+    string saveFolderPath = "";
 
     void Start()
     {
-        status.GetComponent<Text>();
-        limitText.GetComponent<Text>();
-        downloadStopButton.SetActive(false);
-        limitText.text = "";
+        DefaultMenu();
+        // status.GetComponent<Text>();
+        // discliptionText.GetComponent<Text>();
+        // downloadStartButton.SetActive(false);
+        // downloadStopButton.SetActive(false);
+        // discliptionText.text = "";
     }
 
-    //DownloadButtonがクリックされたら発火
+    public void DefaultMenu()
+    {
+        status.text = "ボタンクリックでダウンロード開始";
+        if (saveFolderPath == "")
+        {
+            downloadStartButton.SetActive(false);
+        }
+        else
+        {
+            downloadStartButton.SetActive(true);
+        }
+        downloadStopButton.SetActive(false);
+        folderSelectButton.SetActive(true);
+        downloadFlag = false;
+        discliptionText.text = "";
+        discliptionText.text = "";
+    }
+
+    //DownloadButton クリックで呼び出し
     public void DownloadButtonClick()
     {
         StartCoroutine(StartDownload());
     }
-    //DownloadStopButtonが押されたら中止フラグを立ててシーン再読み込み
+    //DownloadStopButton クリックで呼び出し
     public void downloadStopButtonClick()
     {
         downloadStopFlag = true;
-        SceneManager.LoadScene(SceneManager.GetActiveScene().name);
+        DefaultMenu();
+        // SceneManager.LoadScene(SceneManager.GetActiveScene().name);
     }
 
-    //ダウンロード処理
+    public void DialogBox()
+    {
+        FolderBrowserDialog selectFolder = new System.Windows.Forms.FolderBrowserDialog();
+        selectFolder.Description = "select save directly";
+        if (selectFolder.ShowDialog() == System.Windows.Forms.DialogResult.OK)
+        {
+            if (selectFolder.SelectedPath == "")
+            {
+                popupClone = Instantiate(notDirectlyPopup) as GameObject;
+                popupClone.transform.SetParent(canvas.transform, false);
+            }
+            else
+            {
+                //path の区切り文字を Unity 用に変換
+                saveFolderPath = selectFolder.SelectedPath.Replace("\\", "/");
+                downloadStartButton.SetActive(true);
+                saveDirectlyText.text = "保存先：" + saveFolderPath;
+                if (popupClone)
+                {
+                    Destroy(popupClone);
+                }
+            }
+        }
+    }
+    // ダウンロード処理
     public IEnumerator StartDownload()
     {
         downloadFlag = true;
-        downloadButton.SetActive(false);
+        downloadStopFlag = false;
+        downloadStartButton.SetActive(false);
+        folderSelectButton.SetActive(false);
         downloadStopButton.SetActive(true);
         status.text = "ダウンロード中...";
 
         //ネットワーク状態を確認。つながったら次の処理へ
-        while (Application.internetReachability == NetworkReachability.NotReachable)
+        //Application は windows.Forms との曖昧回避
+        while (UnityEngine.Application.internetReachability == NetworkReachability.NotReachable)
         {
-            limitText.text = "ネットワークに接続されていません";
+            status.text = "ネットワークに接続されていません";
             yield return new WaitForSeconds(5f);
         }
 
         while (true)
         {
-            if (MainScript.token.Favorites.List().RateLimit.Remaining > 73)
+            if (MainScript.token.Favorites.List().RateLimit.Remaining > 50)
             {
                 //Favolites.List のアクセス上限200回まで
                 //あるツイートより古いツイートを探したいときは max_id
@@ -87,8 +146,8 @@ public class DownloadManager : MonoBehaviour
 
                                 long tweetID = myFav.Id;
 
-                                string path = "D:/twipicImage/";
-                                fileName.Append(path);
+                                fileName.Append(saveFolderPath);
+                                fileName.Append("/");
                                 fileName.Append(tweetID);
                                 fileName.Append("_");
                                 fileName.Append(i + 1);
@@ -110,7 +169,7 @@ public class DownloadManager : MonoBehaviour
                                     }
                                     catch (Exception ex)
                                     {
-                                        limitText.text = "ダウンロードエラー";
+                                        status.text = "ダウンロードエラー";
                                     }
                                 }
                             }
@@ -129,9 +188,10 @@ public class DownloadManager : MonoBehaviour
                 break;
             }
         }
+        //正常にDLが終了したときの処理
         if (downloadFlag == true)
         {
-            downloadButton.SetActive(true);
+            downloadStartButton.SetActive(true);
             status.text = "ダウンロード完了";
         }
     }
@@ -139,13 +199,14 @@ public class DownloadManager : MonoBehaviour
     //API利用上限に到達したら900秒待機してシーン再読み込み
     IEnumerator RateLimitWait()
     {
-        for (int i = 10; i >= 0; i--)
+        for (int i = 900; i >= 0; i--)
         {
             downloadStopButton.SetActive(false);
-            status.text = "ダウンロード停止";
-            limitText.text = "ダウンロード回数が上限に達しました。 " + i + "秒後に制限解除";
+            // status.text = "ダウンロード停止";
+            status.text = "ダウンロード回数が上限に達しました。" + i + " 秒後に制限解除";
             yield return new WaitForSeconds(1f);
         }
-        SceneManager.LoadScene(SceneManager.GetActiveScene().name);
+        DefaultMenu();
+        // SceneManager.LoadScene(SceneManager.GetActiveScene().name);
     }
 }
