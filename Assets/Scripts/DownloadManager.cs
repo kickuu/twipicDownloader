@@ -117,14 +117,14 @@ public class DownloadManager : MonoBehaviour
 
         while (true)
         {
-            if (MainScript.token.Favorites.List().RateLimit.Remaining > 50)
+            if (MainScript.token.Favorites.List().RateLimit.Remaining > 60)
             {
                 //Favolites.List のアクセス上限200回まで
                 //あるツイートより古いツイートを探したいときは max_id
                 foreach (var myFav in MainScript.token.Favorites.List(count => 200, include_entities => true,
-                                                                      tweet_mode => TweetMode.Extended, max_id => maxID))
-                {
-                    // ツイートにメディアが含まれているか確認
+                                                                      tweet_mode => TweetMode.Extended, max_id => maxID - 1))
+                    {
+                        // ツイートにメディアが含まれているか確認
                     if (myFav.Entities.Media != null)
                     {
                         int mediaLength = myFav.ExtendedEntities.Media.Length;
@@ -179,8 +179,8 @@ public class DownloadManager : MonoBehaviour
                     downloadCount++;
                 }
                 int raterimit = MainScript.token.Favorites.List().RateLimit.Remaining;
-                Debug.Log(raterimit);
-                Debug.Log(downloadCount);
+                Debug.Log("raterimit" + raterimit);
+                Debug.Log("downloadCount" + downloadCount);
             }
             else
             {
