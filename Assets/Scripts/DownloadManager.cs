@@ -1,12 +1,12 @@
 ﻿using System;
 using System.IO;
 using System.Collections;
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 using CoreTweet;
 using UnityEngine.Networking;
 using System.Text;
-using UnityEngine.SceneManagement;
 using TMPro;
 //フォルダ選択のために使用
 using System.Windows.Forms;
@@ -18,28 +18,24 @@ public class DownloadManager : MonoBehaviour
     [SerializeField] GameObject downloadStopButton;
     [SerializeField] GameObject folderSelectButton;
     [SerializeField] Transform canvas;
-    [SerializeField] Text discliptionText;
     [SerializeField] TextMeshProUGUI saveDirectlyText;
     [SerializeField] GameObject notDirectlyPopup;
     //popup prefab 用の変数
     GameObject popupClone;
 
-    long? maxID = null;
+    long? maxID = long.MaxValue;
     // long? sinceID = null;
     bool downloadFlag = false;
     bool downloadStopFlag = false;
     //デバッグ用 API 使用回数
     int downloadCount = 0;
     string saveFolderPath = "";
+    //fav を格納するリスト
+    List<Status> favIdList = new List<Status>();
 
     void Start()
     {
         DefaultMenu();
-        // status.GetComponent<Text>();
-        // discliptionText.GetComponent<Text>();
-        // downloadStartButton.SetActive(false);
-        // downloadStopButton.SetActive(false);
-        // discliptionText.text = "";
     }
 
     public void DefaultMenu()
@@ -56,8 +52,6 @@ public class DownloadManager : MonoBehaviour
         downloadStopButton.SetActive(false);
         folderSelectButton.SetActive(true);
         downloadFlag = false;
-        discliptionText.text = "";
-        discliptionText.text = "";
     }
 
     //DownloadButton クリックで呼び出し
@@ -65,12 +59,12 @@ public class DownloadManager : MonoBehaviour
     {
         StartCoroutine(StartDownload());
     }
+
     //DownloadStopButton クリックで呼び出し
     public void downloadStopButtonClick()
     {
         downloadStopFlag = true;
         DefaultMenu();
-        // SceneManager.LoadScene(SceneManager.GetActiveScene().name);
     }
 
     public void DialogBox()
@@ -97,9 +91,35 @@ public class DownloadManager : MonoBehaviour
             }
         }
     }
+
+    //twitterAPI でいいね欄からメディア付きのツイートのみを取得する
+    void GetFavList()
+    {
+        favIdList.Clear();
+        try
+        {
+            //Favolites.List のアクセス上限200回まで
+            //あるツイートより古いツイートを探したいときは max_id
+            foreach (var favList in MainScript.token.Favorites.List(count => 200, include_entities => true,
+                                                                      tweet_mode => TweetMode.Extended, max_id => maxID - 1))
+            {
+                if (favList.Entities.Media != null)
+                {
+                    favIdList.Add(favList);
+                }
+            }
+        }
+        catch (System.Exception ex)
+        {
+            Debug.Log(ex.Message);
+            StartCoroutine(RateLimitWait());
+        }
+    }
+
     // ダウンロード処理
     public IEnumerator StartDownload()
     {
+        downloadCount = 0;
         downloadFlag = true;
         downloadStopFlag = false;
         downloadStartButton.SetActive(false);
@@ -107,7 +127,6 @@ public class DownloadManager : MonoBehaviour
         downloadStopButton.SetActive(true);
         status.text = "ダウンロード中...";
 
-        //ネットワーク状態を確認。つながったら次の処理へ
         //Application は windows.Forms との曖昧回避
         while (UnityEngine.Application.internetReachability == NetworkReachability.NotReachable)
         {
@@ -117,94 +136,82 @@ public class DownloadManager : MonoBehaviour
 
         while (true)
         {
-            if (MainScript.token.Favorites.List().RateLimit.Remaining > 60)
+            GetFavList();
+            if (favIdList.Count != 0)
             {
-                //Favolites.List のアクセス上限200回まで
-                //あるツイートより古いツイートを探したいときは max_id
-                foreach (var myFav in MainScript.token.Favorites.List(count => 200, include_entities => true,
-                                                                      tweet_mode => TweetMode.Extended, max_id => maxID - 1))
-                    {
-                        // ツイートにメディアが含まれているか確認
-                    if (myFav.Entities.Media != null)
-                    {
-                        int mediaLength = myFav.ExtendedEntities.Media.Length;
+                foreach (var favMediaList in favIdList)
+                {
+                    int mediaLength = favMediaList.ExtendedEntities.Media.Length;
 
-                        for (int i = 0; i <= mediaLength - 1; i++)
+                    for (int j = 0; j <= mediaLength - 1; j++)
+                    {
+                        //downloadStopのフラグが立ったらコルーチン抜ける
+                        if (downloadStopFlag == true)
                         {
-                            //downloadStopのフラグが立ったらコルーチン抜ける
-                            if (downloadStopFlag == true)
-                            {
-                                yield break;
-                            }
+                            yield break;
+                        }
+
+                        string url = favMediaList.ExtendedEntities.Media[j].MediaUrlHttps + ":orig";
+
+                        using (UnityWebRequest webRequest = UnityWebRequest.Get(url))
+                        {
+                            yield return webRequest.SendWebRequest();
 
                             StringBuilder fileName = new StringBuilder();
-                            string url = myFav.ExtendedEntities.Media[i].MediaUrlHttps + ":orig";
+                            fileName.Append(saveFolderPath);
+                            fileName.Append("/");
+                            fileName.Append(favMediaList.Id);
+                            fileName.Append("_");
+                            fileName.Append(j + 1);
+                            fileName.Append(".png");
 
-                            using (UnityWebRequest webRequest = UnityWebRequest.Get(url))
+                            maxID = favMediaList.Id;
+
+                            if (webRequest.isNetworkError || webRequest.isHttpError)
                             {
-                                yield return webRequest.SendWebRequest();
-
-                                long tweetID = myFav.Id;
-
-                                fileName.Append(saveFolderPath);
-                                fileName.Append("/");
-                                fileName.Append(tweetID);
-                                fileName.Append("_");
-                                fileName.Append(i + 1);
-                                fileName.Append(".png");
-
-                                maxID = myFav.Id;
-
-                                if (webRequest.isNetworkError || webRequest.isHttpError)
+                                Debug.Log(webRequest.error);
+                            }
+                            else
+                            {
+                                try
                                 {
-                                    Debug.Log(webRequest.error);
+                                    string fileNameString = fileName.ToString();
+                                    File.WriteAllBytes(@fileNameString, webRequest.downloadHandler.data);
+                                    fileName.Clear();
                                 }
-                                else
+                                catch (Exception ex)
                                 {
-                                    try
-                                    {
-                                        string fileNameString = fileName.ToString();
-                                        File.WriteAllBytes(@fileNameString, webRequest.downloadHandler.data);
-                                        fileName.Clear();
-                                    }
-                                    catch (Exception ex)
-                                    {
-                                        Debug.Log(ex.Message);
-                                        status.text = "ダウンロードエラー";
-                                    }
+                                    Debug.Log(ex.Message);
+                                    status.text = "ダウンロードエラー";
                                 }
                             }
                         }
+                        downloadCount++;
                     }
-                    downloadCount++;
                 }
-                int raterimit = MainScript.token.Favorites.List().RateLimit.Remaining;
-                Debug.Log("raterimit" + raterimit);
-                Debug.Log("downloadCount" + downloadCount);
+                Debug.Log(downloadCount + "枚");
             }
-            else
+            else if (favIdList.Count == 0)
             {
-                downloadFlag = false;
-                StartCoroutine(RateLimitWait());
                 break;
             }
         }
-        //正常にDLが終了したときの処理
-        if (downloadFlag == true)
-        {
-            downloadStartButton.SetActive(true);
-            status.text = "ダウンロード完了";
-        }
+        // Debug.Log(MainScript.token.Favorites.List().RateLimit.Remaining);
+        downloadStopButton.SetActive(false);
+        downloadStartButton.SetActive(true);
+        folderSelectButton.SetActive(true);
+        status.text = "ダウンロード終了";
     }
 
-    //API利用上限に到達したら900秒待機してシーン再読み込み
+    //API利用上限に到達したら900秒待機
     IEnumerator RateLimitWait()
     {
         for (int i = 900; i >= 0; i--)
         {
+            downloadStartButton.SetActive(false);
             downloadStopButton.SetActive(false);
             // status.text = "ダウンロード停止";
-            status.text = "ダウンロード回数が上限に達しました。" + i + " 秒後に制限解除";
+            status.text = "ダウンロード回数が上限に達しました。" + i + " 秒で制限解除";
             yield return new WaitForSeconds(1f);
         }
         DefaultMenu();
