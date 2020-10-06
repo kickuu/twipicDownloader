@@ -5,6 +5,9 @@ using UnityEngine.UI;
 using UnityEngine.SceneManagement;
 using TMPro;
 
+/// <summary>
+/// TwitterAPI の認証処理
+/// </summary>
 public class MainScript : MonoBehaviour
 {
     [SerializeField] public GameObject AuthorizeButton;
@@ -26,6 +29,9 @@ public class MainScript : MonoBehaviour
         discliption.GetComponent<Text>();
     }
 
+    /// <summary>
+    /// TwitterAPI OAuth認証開始
+    /// </summary>
     public void AuthorizeButtonClick()
     {
         consumerKey = OAuth.Authorize(CK, CS);
@@ -33,6 +39,9 @@ public class MainScript : MonoBehaviour
         Application.OpenURL(uri);
     }
 
+    /// <summary>
+    /// ピンコード認証を実行し、Token取得
+    /// </summary>
     public void GetInputPincode()
     {
         pincode = pincodeInputField.text;
