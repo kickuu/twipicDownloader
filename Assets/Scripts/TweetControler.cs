@@ -4,6 +4,9 @@ using UnityEngine;
 using UnityEngine.UI;
 using CoreTweet;
 
+/// <summary>
+/// テストコード （現在未使用）
+/// </summary>
 public class TweetControler : MonoBehaviour
 {
     // MainScript mainScript;

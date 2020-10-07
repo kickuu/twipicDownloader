@@ -16,9 +16,6 @@ public class MainScript : MonoBehaviour
 
     static string CK = "veB1GzM0CgTICCDqW09N583Fp";
     static string CS = "pFLfb6lgLFQ8hHEbSPl3rB4Y48oh6QwkRvJZCA4ZyyZVq3xzmo";
-    // static string AT = "3677900594-aT65SPtGuWswaTtAXJKVnKMgAgpCNp4kI6oMr2y";
-    // static string AS = "XmB4i36BY6Gyj7mSXUpQWGgiNDbZbK0i0cOVaOU90CkA1";
-
     OAuth.OAuthSession consumerKey;
     string pincode;
     public static Tokens token { get; private set; }

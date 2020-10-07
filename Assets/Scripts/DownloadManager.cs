@@ -1,14 +1,15 @@
 ﻿using System;
 using System.IO;
+using System.Text;
 using System.Collections;
 using System.Collections.Generic;
-using UnityEngine;
-using UnityEngine.UI;
-using CoreTweet;
-using UnityEngine.Networking;
-using System.Text;
 //フォルダ選択のために使用
 using System.Windows.Forms;
+using UnityEngine;
+using UnityEngine.UI;
+using UnityEngine.Networking;
+//twitterAPIライブラリ
+using CoreTweet;
 
 /// <summary>
 /// ダウンロード処理全般のクラス
@@ -25,14 +26,11 @@ public class DownloadManager : MonoBehaviour
     //popup prefab 用の変数
     GameObject popupClone;
 
-    long? maxID = long.MaxValue;
-    // long? sinceID = null;
+    long maxID = long.MaxValue;
     bool downloadFlag = false;
     bool downloadStopFlag = false;
-    //デバッグ用 API 使用回数
     int downloadCount = 0;
     string saveFolderPath = "";
-    //fav を格納するリスト
     List<Status> favIdList = new List<Status>();
 
     void Start()
@@ -170,7 +168,6 @@ public class DownloadManager : MonoBehaviour
 
                     for (int j = 0; j <= mediaLength - 1; j++)
                     {
-                        //downloadStopのフラグが立ったらコルーチン抜ける
                         if (downloadStopFlag == true)
                         {
                             StopDownload();
@@ -186,12 +183,12 @@ public class DownloadManager : MonoBehaviour
                             StringBuilder fileName = new StringBuilder();
                             fileName.Append(saveFolderPath);
                             fileName.Append("/");
+                            fileName.Append(favMediaList.User.ScreenName);
+                            fileName.Append("-");
                             fileName.Append(favMediaList.Id);
                             fileName.Append("_");
                             fileName.Append(j + 1);
                             fileName.Append(".png");
-
-                            maxID = favMediaList.Id;
 
                             if (webRequest.isNetworkError || webRequest.isHttpError)
                             {
@@ -211,11 +208,11 @@ public class DownloadManager : MonoBehaviour
                                     status.text = "ダウンロードエラー";
                                 }
                             }
+                            maxID = favMediaList.Id;
                         }
                         downloadCount++;
                     }
                 }
-                Debug.Log(downloadCount + "枚");
             }
             else if (favIdList.Count == 0)
             {
