@@ -520,7 +520,7 @@ MonoBehaviour:
     m_RichText: 1
     m_HorizontalOverflow: 0
     m_VerticalOverflow: 0
-    m_LineSpacing: 1
+    m_LineSpacing: 1.2
   m_Text: "\u30DC\u30BF\u30F3\u30AF\u30EA\u30C3\u30AF\u3067\u30C0\u30A6\u30F3\u30ED\u30FC\u30C9\u958B\u59CB"
 --- !u!1 &297187391
 GameObject:
@@ -1344,7 +1344,7 @@ MonoBehaviour:
     m_PersistentCalls:
       m_Calls:
       - m_Target: {fileID: 1475816749}
-        m_MethodName: DialogBox
+        m_MethodName: SerectDownloadFolder
         m_Mode: 1
         m_Arguments:
           m_ObjectArgument: {fileID: 0}
@@ -1479,6 +1479,7 @@ GameObject:
   m_Component:
   - component: {fileID: 1475816748}
   - component: {fileID: 1475816749}
+  - component: {fileID: 1475816750}
   m_Layer: 0
   m_Name: ApplicationManager
   m_TagString: Untagged
@@ -1517,9 +1518,24 @@ MonoBehaviour:
   downloadStopButton: {fileID: 297187391}
   folderSelectButton: {fileID: 1269541780}
   canvas: {fileID: 1595601710}
-  saveDirectlyText: {fileID: 371256360}
+  saveDirectlyText: {fileID: 0}
   notDirectlyPopup: {fileID: 1901457139793650233, guid: 19487ddb5eb84aa41b1e153bab0a8115,
     type: 3}
+  downloadFolderPath: 
+--- !u!114 &1475816750
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1475816747}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 445bdad9b5293c54d84380fc4bcbbedf, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  saveDirectlyText: {fileID: 371256360}
+  loadPath: 
 --- !u!1 &1595601706
 GameObject:
   m_ObjectHideFlags: 0

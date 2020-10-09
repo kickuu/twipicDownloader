@@ -27,14 +27,19 @@ public class DownloadManager : MonoBehaviour
     GameObject popupClone;
 
     long maxID = long.MaxValue;
-    bool downloadFlag = false;
+    bool downloadingFlag = false;
     bool downloadStopFlag = false;
     int downloadCount = 0;
-    string saveFolderPath = "";
+    public string downloadFolderPath;
     List<Status> favIdList = new List<Status>();
+    StringBuilder fileName = new StringBuilder();
 
     void Start()
     {
+        //セーブデータのロード
+        SaveManager saveManager = GetComponent<SaveManager>();
+        saveManager.LoadSaveDate();
+        downloadFolderPath = saveManager.LoadSaveDate();
         DefaultMenu();
     }
 
@@ -43,8 +48,10 @@ public class DownloadManager : MonoBehaviour
     /// </summary>
     public void DefaultMenu()
     {
+
         status.text = "ボタンクリックでダウンロード開始";
-        if (saveFolderPath == "")
+
+        if (downloadFolderPath == "")
         {
             downloadStartButton.SetActive(false);
         }
@@ -52,9 +59,10 @@ public class DownloadManager : MonoBehaviour
         {
             downloadStartButton.SetActive(true);
         }
+        Debug.Log("パスは" + downloadFolderPath + "です");
         downloadStopButton.SetActive(false);
         folderSelectButton.SetActive(true);
-        downloadFlag = false;
+        downloadingFlag = false;
     }
 
     /// <summary>
@@ -65,11 +73,11 @@ public class DownloadManager : MonoBehaviour
         downloadStopButton.SetActive(false);
         downloadStartButton.SetActive(true);
         folderSelectButton.SetActive(true);
-        status.text = "終了。" + downloadCount + "枚ダウンロード";
+        status.text = "終了 " + downloadCount + "枚ダウンロード";
     }
 
     /// <summary>
-    /// DdownloadButton 押されたら呼ばれる
+    /// DownloadButton 押されたら呼ばれる
     /// </summary>
     public void DownloadButtonClick()
     {
@@ -85,9 +93,9 @@ public class DownloadManager : MonoBehaviour
     }
 
     /// <summary>
-    /// ダイアログボックスを操作するメソッド
+    /// ダウンロードするフォルダを選ぶメソッド
     /// </summary>
-    public void DialogBox()
+    public void SerectDownloadFolder()
     {
         FolderBrowserDialog selectFolder = new System.Windows.Forms.FolderBrowserDialog();
         selectFolder.Description = "select save directly";
@@ -101,9 +109,13 @@ public class DownloadManager : MonoBehaviour
             else
             {
                 //path の区切り文字を Unity 用に変換
-                saveFolderPath = selectFolder.SelectedPath.Replace("\\", "/");
+                downloadFolderPath = selectFolder.SelectedPath.Replace("\\", "/");
+
+                //downloadFolderPath のセーブ処理
+                SaveManager saveManager = GetComponent<SaveManager>();
+                saveManager.CreateSaveDate(downloadFolderPath);
+
                 downloadStartButton.SetActive(true);
-                saveDirectlyText.text = "保存先：" + saveFolderPath;
                 if (popupClone)
                 {
                     Destroy(popupClone);
@@ -119,8 +131,8 @@ public class DownloadManager : MonoBehaviour
         favIdList.Clear();
         try
         {
-            //Favolites.List のアクセス上限200回まで
-            //あるツイートより古いツイートを探したいときは max_id
+            //Favolites.List のアクセス上限200回
+            //max_id を指定すると max_id よりも古いツイートのみを取得する
             foreach (var favList in MainScript.token.Favorites.List(count => 200, include_entities => true,
                                                                     tweet_mode => TweetMode.Extended, max_id => maxID - 1))
             {
@@ -143,7 +155,7 @@ public class DownloadManager : MonoBehaviour
     IEnumerator StartDownload()
     {
         downloadCount = 0;
-        downloadFlag = true;
+        downloadingFlag = true;
         downloadStopFlag = false;
         downloadStartButton.SetActive(false);
         folderSelectButton.SetActive(false);
@@ -180,8 +192,7 @@ public class DownloadManager : MonoBehaviour
                         {
                             yield return webRequest.SendWebRequest();
 
-                            StringBuilder fileName = new StringBuilder();
-                            fileName.Append(saveFolderPath);
+                            fileName.Append(downloadFolderPath);
                             fileName.Append("/");
                             fileName.Append(favMediaList.User.ScreenName);
                             fileName.Append("-");
@@ -200,7 +211,6 @@ public class DownloadManager : MonoBehaviour
                                 {
                                     string fileNameString = fileName.ToString();
                                     File.WriteAllBytes(@fileNameString, webRequest.downloadHandler.data);
-                                    fileName.Clear();
                                 }
                                 catch (Exception ex)
                                 {
@@ -208,6 +218,7 @@ public class DownloadManager : MonoBehaviour
                                     status.text = "ダウンロードエラー";
                                 }
                             }
+                            fileName.Clear();
                             maxID = favMediaList.Id;
                         }
                         downloadCount++;
@@ -231,7 +242,8 @@ public class DownloadManager : MonoBehaviour
         {
             downloadStartButton.SetActive(false);
             downloadStopButton.SetActive(false);
-            status.text = "ダウンロード回数が上限に達しました。" + i + " 秒で制限解除";
+            folderSelectButton.SetActive(false);
+            status.text = "ダウンロード回数が上限に達しました。\n" + i + " 秒で制限解除";
             yield return new WaitForSeconds(1f);
         }
         DefaultMenu();
