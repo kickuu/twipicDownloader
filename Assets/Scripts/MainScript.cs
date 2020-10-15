@@ -10,9 +10,9 @@ using TMPro;
 /// </summary>
 public class MainScript : MonoBehaviour
 {
-    [SerializeField] public GameObject AuthorizeButton;
-    [SerializeField] public InputField pincodeInputField;
-    [SerializeField] public TextMeshProUGUI discliption;
+    [SerializeField] GameObject AuthorizeButton;
+    [SerializeField] InputField pincodeInputField;
+    [SerializeField] TextMeshProUGUI discliption;
 
     static string CK = "veB1GzM0CgTICCDqW09N583Fp";
     static string CS = "pFLfb6lgLFQ8hHEbSPl3rB4Y48oh6QwkRvJZCA4ZyyZVq3xzmo";

@@ -1,7 +1,8 @@
 # **TwiPicDownloader**
 
-TwiPicDownloader は、いいねした画像をローカルに保存するための Windows 用アプリです。
-いいねした画像を Tweet された日時が新しい順にダウンロードします
+TwiPicDownloader は、Unity + TwitterAPI で作られている Windows 用アプリです。
+
+いいねした画像を Tweet された日時が新しい順にローカルにダウンロードします。
 
 ## 実行環境
 
