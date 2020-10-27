@@ -87,7 +87,7 @@ public class DownloadManager : MonoBehaviour
     /// <summary>
     /// DownloadStopButton が押されたら呼ばれる
     /// </summary>
-    public void downloadStopButtonClick()
+    public void DownloadStopButtonClick()
     {
         downloadStopFlag = true;
     }
@@ -99,6 +99,7 @@ public class DownloadManager : MonoBehaviour
     {
         FolderBrowserDialog selectFolder = new System.Windows.Forms.FolderBrowserDialog();
         selectFolder.Description = "select save directly";
+
         if (selectFolder.ShowDialog() == System.Windows.Forms.DialogResult.OK)
         {
             if (selectFolder.SelectedPath == "")
@@ -247,5 +248,20 @@ public class DownloadManager : MonoBehaviour
             yield return new WaitForSeconds(1f);
         }
         DefaultMenu();
+    }
+
+    /// <summary>
+    /// 選択したフォルダをエクスプローラーで表示する
+    /// </summary>
+    public void FolderBlows()
+    {
+        if (downloadFolderPath == "")
+        {
+            return;
+        }
+        else
+        {
+            System.Diagnostics.Process.Start(@downloadFolderPath);
+        }
     }
 }
