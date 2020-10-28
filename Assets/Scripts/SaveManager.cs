@@ -14,6 +14,7 @@ public class SaveManager : MonoBehaviour
     //セーブデータの保存先
     string saveDatePath;
     //ロードした path を格納する変数
+    [HideInInspector]
     public string loadPath;
 
     private void Awake()

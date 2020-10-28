@@ -3,13 +3,13 @@ using System.IO;
 using System.Text;
 using System.Collections;
 using System.Collections.Generic;
-//フォルダ選択のために使用
-using System.Windows.Forms;
 using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.Networking;
 //twitterAPIライブラリ
 using CoreTweet;
+//フォルダ選択のために使用
+using System.Windows.Forms;
 
 /// <summary>
 /// ダウンロード処理全般のクラス
@@ -23,16 +23,17 @@ public class DownloadManager : MonoBehaviour
     [SerializeField] Transform canvas;
     [SerializeField] Text saveDirectlyText;
     [SerializeField] GameObject notDirectlyPopup;
-    //popup prefab 用の変数
-    GameObject popupClone;
 
     long maxID = long.MaxValue;
     bool downloadingFlag = false;
     bool downloadStopFlag = false;
     int downloadCount = 0;
+    [HideInInspector]
     public string downloadFolderPath;
+
     List<Status> favIdList = new List<Status>();
     StringBuilder fileName = new StringBuilder();
+    GameObject popupClone;
 
     void Start()
     {
@@ -59,7 +60,6 @@ public class DownloadManager : MonoBehaviour
         {
             downloadStartButton.SetActive(true);
         }
-        Debug.Log("パスは" + downloadFolderPath + "です");
         downloadStopButton.SetActive(false);
         folderSelectButton.SetActive(true);
         downloadingFlag = false;
