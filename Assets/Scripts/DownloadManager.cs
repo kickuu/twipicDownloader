@@ -39,7 +39,6 @@ public class DownloadManager : MonoBehaviour
     {
         //セーブデータのロード
         SaveManager saveManager = GetComponent<SaveManager>();
-        saveManager.LoadSaveDate();
         downloadFolderPath = saveManager.LoadSaveDate();
         DefaultMenu();
     }
