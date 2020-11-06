@@ -21,8 +21,8 @@ public class DownloadManager : MonoBehaviour
     [SerializeField] GameObject downloadStopButton;
     [SerializeField] GameObject folderSelectButton;
     [SerializeField] Transform canvas;
-    [SerializeField] Text saveDirectlyText;
-    [SerializeField] GameObject notDirectlyPopup;
+    [SerializeField] Text saveDirectoryText;
+    [SerializeField] GameObject notDirectoryPopup;
 
     long maxID = long.MaxValue;
     bool downloadingFlag = false;
@@ -103,7 +103,7 @@ public class DownloadManager : MonoBehaviour
         {
             if (selectFolder.SelectedPath == "")
             {
-                popupClone = Instantiate(notDirectlyPopup) as GameObject;
+                popupClone = Instantiate(notDirectoryPopup) as GameObject;
                 popupClone.transform.SetParent(canvas.transform, false);
             }
             else
